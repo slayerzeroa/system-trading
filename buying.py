@@ -116,7 +116,7 @@ if __name__ == "__main__":
     while kiwoom.remained_data is True:
         time.sleep(TR_REQ_TIME_INTERVAL)
         kiwoom.set_input_value("종목코드", "039490")
-        kiwoom.set_input_value("기준일자", "20170801")
+        kiwoom.set_input_value("기준일자", "")
         kiwoom.set_input_value("수정주가구분", "1")
         kiwoom.comm_rq_data("coingo", "opt10081", 2, "0101")
 
@@ -125,10 +125,11 @@ if __name__ == "__main__":
     df.to_sql("table_039490", con, if_exists = "replace")
 
     cursor = con.cursor()
-    cursor.execute("SELECT * FROM table_039490")
-    for one in cursor.fetchall():
-        print(one)
-
-
-if "저가" < "고가":
-    print('완료')
+    result = cursor.execute("SELECT * FROM table_039490")    # 개별종목코드를 전체 시장코드로 변환
+    row = result.fetchmany(120)
+    bfhigh=row[119][2]    # 120일 전 고가
+    nwlow=row[0][3]    # 현재 일봉 중 저가
+    bh=int(bfhigh)  # 숫자열 변환
+    nl=int(nwlow)
+    if nl > bh:
+        print("우상향 개이득")    # 나중에 print 부분은 매수 알고리즘으로 대체, 돌아가는지만 확인용.
