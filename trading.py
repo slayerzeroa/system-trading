@@ -1,6 +1,6 @@
 # python system trading program using PyQt
 # Reference : https://cafe.naver.com/autotradestudy, https://wikidocs.net/book/110
-# author : youngpark-POS, slayerzeroa
+# author : youngpark-POS
 # 키움증권 Open Api+ Entity Class Generator
 
 import sys
