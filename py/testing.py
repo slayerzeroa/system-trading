@@ -14,7 +14,6 @@ import pandas as pd
 import sqlite3
 import time
 import os,subprocess    # 프로세스 관련 모듈인데 혹시 몰라서 넣어놈
-import logging
 
 TR_REQ_TIME_INTERVAL = 0.2
 
@@ -93,7 +92,7 @@ class Kiwoom(QAxWidget):
                 self.ohlcv[feature_en].append(data_list[j])
 
 
-class Conditon(QAxWidget):
+class Condition(QAxWidget):
     def __init__(self):
         super().__init__()
         self._create_instance()
@@ -103,20 +102,52 @@ class Conditon(QAxWidget):
         self.setControl("KHOPENAPI.KHOpenAPICtrl.1")
 
     def _set_signals_slots(self):
-        self.OnReceiveConditionVer.connect(self.condition_search)
-        self.OnReceiveTrCondition.connect(self.condition_serach)
+        self.OnReceiveConditionVer.connect(self.get_condition_name)
+        self.OnReceiveTrCondition.connect(self.result_condition)
         self.OnReceiveRealCondition.connect(self.result_condition)
 
     def condition_search(self):
         self.dynamicCall("GetConditionLoad()")
-        self.search_event_loop = QEventLoop()
-        self.search_event_loop.exec
-        self.dynamicCall("GetConditionNameList()")
+
+    def condition_connect(self, errcode):
+        if errcode == 1:
+            print("Connected")
+            # self.get_logininfo()
+        else:
+            print("Disconnected")
+        self.condition_search.exit()
+
+    def get_condition_name(self):
+        data = self.dynamicCall("GetConditionNameList()")
+
+        if data == "":
+            raise KiwoomProcessingError("get_condition_name(): 사용자 조건식이 없습니다.")
+
+        conlist = data.split(';')
+        del conlist[-1]
+
+        conditionDic = {}
+
+        for cond in conlist:
+            key, value = cond.split('^')
+            conditionDic[int(key)] = value
+
+        return conditionDic
 
     def result_condition(self, screen_no, condition_name, nIndex, nSearch):
         self.dynamicCall("SendCondition(QString, QString, int, int)", screen_no, condition_name, nIndex, nSearch)
 
-        ## 조건검색 결과 가공
+class KiwoomProcessingError(Exception):
+    """ 키움에서 처리실패에 관련된 리턴코드를 받았을 경우 발생하는 예외 """
+
+    def __init__(self, msg="처리 실패"):
+        self.msg = msg
+
+    def __str__(self):
+        return self.msg
+
+    def __repr__(self):
+        return self.msg
 
 
 if __name__ == "__main__":
@@ -148,21 +179,14 @@ if __name__ == "__main__":
     nw = row[0][1]    # 현재 일봉 중 종가
     bh = int(bf)  # 숫자열 변환
     nl = int(nw)
-    if nl < bh:
+    if nl > bh:
+        print("1번 알고리즘을 실행합니다.")
+        # 조건검색 알고리즘 1
+        condition = Condition()
+        condition.condition_search()
+        conditions = condition.get_condition_name()
 
-        app = QApplication(sys.argv)   # 조건검색 알고리즘 1
-        condition = Conditon()
-        condition.condition_searh()
-        condition.result_condition("0150", "알고리즘 1", 0, 1)
+        print("conditions")
 
-        con_C = sqlite3.connect("ConditionList.db")
-        df_C = DataFrame(condition.result_condition, columns=["code"], index=["1", "2", "3", "4", "5"])
-        df_C.to_sql("table_condition_result", con_C, if_exists="replace")
-
-        cursors = con_C.cursor()
-        result2 = cursors.execute("SELECT * FROM table_condition_result")
-        row = result2.fetchall()
-        first = row[0][0]
-        print(first)
     else:
         print("시장상황이 1번 알고리즘 실행조건을 만족하지 못했습니다.")

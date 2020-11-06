@@ -103,7 +103,7 @@ class Conditon(QAxWidget):
 
     def _set_signals_slots(self):
         self.OnReceiveConditionVer.connect(self.condition_search)
-        self.OnReceiveTrCondition.connect(self.condition_serach)
+        self.OnReceiveTrCondition.connect(self.condition_search)
         self.OnReceiveRealCondition.connect(self.result_condition)
 
     def condition_search(self):
@@ -147,7 +147,7 @@ if __name__ == "__main__":
     nw = row[0][1]    # 현재 일봉 중 종가
     bh = int(bf)  # 숫자열 변환
     nl = int(nw)
-    if nl > bh:
+    if nl < bh:
         print("1번 알고리즘을 실행합니다.")
 
         app = QApplication(sys.argv)   # 조건검색 알고리즘 1
