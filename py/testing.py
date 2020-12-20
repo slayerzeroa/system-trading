@@ -29,7 +29,7 @@ class Kiwoom(QAxWidget):
     def _set_signals_slots(self):
         self.OnEventConnect.connect(self.event_connect)
         self.OnReceiveTrData.connect(self.receive_Trdata)
-
+        self.OnReceiveConditionVer.connect(self.get_condition_name)
 
     def comm_connect(self):
         self.dynamicCall("CommConnect()")
@@ -91,28 +91,12 @@ class Kiwoom(QAxWidget):
             for j, feature_en in enumerate(features_en):
                 self.ohlcv[feature_en].append(data_list[j])
 
-
-class Condition(QAxWidget):
-    def __init__(self):
-        super().__init__()
-        self._create_instance()
-        self._set_signals_slots()
-
-    def _create_instance(self):
-        self.setControl("KHOPENAPI.KHOpenAPICtrl.1")
-
-    def _set_signals_slots(self):
-        self.OnReceiveConditionVer.connect(self.get_condition_name)
-        self.OnReceiveTrCondition.connect(self.result_condition)
-        self.OnReceiveRealCondition.connect(self.result_condition)
-
     def condition_search(self):
         self.dynamicCall("GetConditionLoad()")
 
     def condition_connect(self, errcode):
         if errcode == 1:
             print("Connected")
-            # self.get_logininfo()
         else:
             print("Disconnected")
         self.condition_search.exit()
@@ -125,17 +109,11 @@ class Condition(QAxWidget):
 
         conlist = data.split(';')
         del conlist[-1]
-
-        conditionDic = {}
-
-        for cond in conlist:
-            key, value = cond.split('^')
-            conditionDic[int(key)] = value
-
-        return conditionDic
+        print(conlist)
 
     def result_condition(self, screen_no, condition_name, nIndex, nSearch):
         self.dynamicCall("SendCondition(QString, QString, int, int)", screen_no, condition_name, nIndex, nSearch)
+
 
 class KiwoomProcessingError(Exception):
     """ 키움에서 처리실패에 관련된 리턴코드를 받았을 경우 발생하는 예외 """
@@ -180,13 +158,8 @@ if __name__ == "__main__":
     bh = int(bf)  # 숫자열 변환
     nl = int(nw)
     if nl > bh:
-        print("1번 알고리즘을 실행합니다.")
-        # 조건검색 알고리즘 1
-        condition = Condition()
-        condition.condition_search()
-        conditions = condition.get_condition_name()
-
-        print("conditions")
-
+        print("알고리즘을 실행합니다.")
+        kiwoom.condition_search()
+        kiwoom.get_condition_name()
     else:
-        print("시장상황이 1번 알고리즘 실행조건을 만족하지 못했습니다.")
+        print("시장상황이 알고리즘 실행조건을 만족하지 못했습니다.")
